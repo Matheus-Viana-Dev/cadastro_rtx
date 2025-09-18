@@ -219,6 +219,11 @@ input, textarea, select, button {
     justify-content: flex-start;
     z-index: 2;
     overflow: hidden;
+    /* Forçar aceleração de hardware para melhor performance */
+    transform: translateZ(0);
+    will-change: transform;
+    /* Garantir que o fundo seja visível */
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .candle {
@@ -2421,5 +2426,63 @@ input, textarea, select, button {
     .danger-btn {
         width: 100%;
         text-align: center;
+    }
+}
+
+/* Estilos específicos para iOS */
+@supports (-webkit-touch-callout: none) {
+    .candlesticks-area {
+        /* Otimizações específicas para iOS */
+        -webkit-transform: translateZ(0);
+        -webkit-backface-visibility: hidden;
+        -webkit-perspective: 1000;
+    }
+    
+    .candle {
+        /* Melhor renderização no iOS */
+        -webkit-transform: translateZ(0);
+        backface-visibility: hidden;
+    }
+    
+    .volume-bar {
+        -webkit-transform: translateZ(0);
+        backface-visibility: hidden;
+    }
+    
+    /* Garantir que as cores sejam visíveis no iOS */
+    .candle.bullish .candle-body {
+        background: #0ECB81 !important;
+        border: 1px solid #0ECB81 !important;
+    }
+    
+    .candle.bearish .candle-body {
+        background: #F6465D !important;
+        border: 1px solid #F6465D !important;
+    }
+    
+    .candle.bullish .candle-wick-top,
+    .candle.bullish .candle-wick-bottom {
+        background: #0ECB81 !important;
+    }
+    
+    .candle.bearish .candle-wick-top,
+    .candle.bearish .candle-wick-bottom {
+        background: #F6465D !important;
+    }
+}
+
+/* Estilos específicos para Android */
+@supports not (-webkit-touch-callout: none) {
+    .candlesticks-area {
+        /* Otimizações para Android */
+        transform: translate3d(0, 0, 0);
+    }
+    
+    .candle {
+        transform: translate3d(0, 0, 0);
+    }
+    
+    .volume-bar {
+        transform: translate3d(0, 0, 0);
     }
 }

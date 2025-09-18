@@ -165,7 +165,10 @@ function createUltraVolatileCandles() {
         const currentX = parseFloat(currentTransform.match(/translateX\(([^)]+)\)/)?.[1] || 0);
         candle.style.transform = `translateX(${currentX - 12}px)`;
         
-        if (currentX < -60 && existingCandles.length > 50) {
+        const device = detectDevice();
+        const maxCandles = device.isMobile ? 25 : 50;
+        
+        if (currentX < -60 && existingCandles.length > maxCandles) {
             setTimeout(() => {
                 if (candle.parentNode) candle.remove();
             }, 600);
@@ -218,7 +221,10 @@ function createCorrelatedVolume() {
         const currentX = parseFloat(currentTransform.match(/translateX\(([^)]+)\)/)?.[1] || 0);
         bar.style.transform = `${currentTransform} translateX(${currentX - 12}px)`;
         
-        if (currentX < -60 && existingBars.length > 50) {
+        const device = detectDevice();
+        const maxBars = device.isMobile ? 25 : 50;
+        
+        if (currentX < -60 && existingBars.length > maxBars) {
             setTimeout(() => {
                 if (bar.parentNode) bar.remove();
             }, 600);
@@ -353,34 +359,115 @@ function createMarketParticles() {
     }
 }
 
+// Detectar dispositivo e plataforma
+function detectDevice() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isIOS = /iphone|ipad|ipod/.test(userAgent);
+    const isAndroid = /android/.test(userAgent);
+    const isMobile = /mobile|android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    const isDesktop = !isMobile;
+    
+    return {
+        isIOS,
+        isAndroid,
+        isMobile,
+        isDesktop,
+        platform: isIOS ? 'ios' : isAndroid ? 'android' : isDesktop ? 'desktop' : 'unknown'
+    };
+}
+
+// Configurações adaptadas por dispositivo
+function getDeviceConfig() {
+    const device = detectDevice();
+    
+    if (device.isIOS) {
+        return {
+            candleInterval: 1500, // Mais lento no iOS
+            volumeInterval: 1500,
+            indicatorInterval: 3000,
+            priceInterval: 1000,
+            particleInterval: 25000,
+            maxCandles: 25, // Menos velas no iOS
+            enableParticles: false, // Desabilitar partículas no iOS
+            enableFloatingPrices: true,
+            animationSpeed: 'slow'
+        };
+    } else if (device.isAndroid) {
+        return {
+            candleInterval: 1200,
+            volumeInterval: 1200,
+            indicatorInterval: 2500,
+            priceInterval: 900,
+            particleInterval: 20000,
+            maxCandles: 30,
+            enableParticles: true,
+            enableFloatingPrices: true,
+            animationSpeed: 'normal'
+        };
+    } else {
+        return {
+            candleInterval: 1000, // Mais rápido no desktop
+            volumeInterval: 1000,
+            indicatorInterval: 2000,
+            priceInterval: 800,
+            particleInterval: 15000,
+            maxCandles: 40,
+            enableParticles: true,
+            enableFloatingPrices: true,
+            animationSpeed: 'fast'
+        };
+    }
+}
+
 // Inicialização otimizada para fundo
 function initializeChartBackground() {
-    console.log('🚀 Iniciando gráfico de fundo...');
+    const device = detectDevice();
+    const config = getDeviceConfig();
+    
+    console.log('🚀 Iniciando gráfico de fundo...', {
+        device: device.platform,
+        config: config
+    });
     
     // Configurar histórico inicial
     for (let i = 0; i < 10; i++) {
         marketState.priceHistory.push(marketState.currentPrice + (Math.random() - 0.5) * 5000);
     }
     
-    // Criar velas iniciais
-    for (let i = 0; i < 30; i++) {
+    // Criar velas iniciais (menos no mobile)
+    const initialCandles = device.isMobile ? 15 : 30;
+    for (let i = 0; i < initialCandles; i++) {
         setTimeout(() => {
             createUltraVolatileCandles();
             createCorrelatedVolume();
-        }, i * 200);
+        }, i * (device.isIOS ? 300 : 200));
     }
 
     updateAllIndicators();
-    createMarketParticles();
+    
+    // Só criar partículas se habilitado
+    if (config.enableParticles) {
+        createMarketParticles();
+    }
 
-    // Loops otimizados para fundo
-    setInterval(createUltraVolatileCandles, 1200);
-    setInterval(createCorrelatedVolume, 1200);
-    setInterval(updateAllIndicators, 2000);
-    setInterval(createExtremePrices, 800);
-    setInterval(createMarketParticles, 20000);
+    // Loops otimizados por dispositivo
+    setInterval(createUltraVolatileCandles, config.candleInterval);
+    setInterval(createCorrelatedVolume, config.volumeInterval);
+    setInterval(updateAllIndicators, config.indicatorInterval);
+    
+    if (config.enableFloatingPrices) {
+        setInterval(createExtremePrices, config.priceInterval);
+    }
+    
+    if (config.enableParticles) {
+        setInterval(createMarketParticles, config.particleInterval);
+    }
 
-    console.log('✅ Gráfico de fundo ativo!');
+    console.log('✅ Gráfico de fundo ativo!', {
+        device: device.platform,
+        candles: config.candleInterval + 'ms',
+        particles: config.enableParticles ? 'habilitado' : 'desabilitado'
+    });
 }
 
 // Iniciar quando carregar
