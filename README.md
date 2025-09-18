@@ -1,176 +1,99 @@
-# RTX Operações - Sistema de Cadastro Web
+# RTX Operações - Sistema de Cadastro com Google Sheets
 
-Sistema completo de cadastro web com backend Node.js para armazenamento de dados em servidor.
+Sistema de cadastro que salva dados automaticamente no Google Sheets e permite visualização através de um dashboard.
 
 ## 🚀 Funcionalidades
 
-- **Cadastro de usuários** com validação completa
-- **Área administrativa** com dashboard e estatísticas
-- **Exportação de dados** em Excel e CSV
-- **Interface responsiva** com tema escuro
-- **Gráficos interativos** de fundo estilo Binance
-- **Armazenamento no servidor** (não mais localStorage)
+- ✅ **Formulário de cadastro** com validação
+- ✅ **Salvamento duplo**: Google Sheets + Webhook
+- ✅ **Dashboard completo** com estatísticas avançadas
+- ✅ **Gráficos interativos** (cadastros por dia, distribuição por horário)
+- ✅ **Exportação** para Excel e CSV
+- ✅ **Estatísticas detalhadas**:
+  - Total de acessos
+  - Total de cadastros
+  - Cadastros completos/incompletos
+  - Taxa de conversão
+- ✅ **Interface responsiva** e moderna
 
-## 📋 Pré-requisitos
+## Dados Enviados
 
-- Node.js (versão 14 ou superior)
-- npm (gerenciador de pacotes do Node.js)
+Quando um usuário se cadastra, apenas os dados do formulário são enviados para o webhook em formato JSON:
 
-## 🛠️ Instalação
+```json
+{
+  "nome": "Nome do usuário",
+  "email": "email@exemplo.com", 
+  "cpf": "000.000.000-00",
+  "senha": "senha123",
+  "tipoUsuario": "cliente",
+  "dataCadastro": "01/01/2024, 12:00:00"
+}
+```
 
-1. **Clone ou baixe os arquivos** do projeto para seu servidor
+### Campos Incluídos:
+- **nome**: Nome completo do usuário
+- **email**: E-mail do usuário
+- **cpf**: CPF formatado (000.000.000-00)
+- **senha**: Senha escolhida pelo usuário
+- **tipoUsuario**: "cliente" ou "gn"
+- **dataCadastro**: Data e hora do cadastro no formato brasileiro
 
-2. **Instale as dependências**:
-   ```bash
-   npm install
+## ⚙️ Configuração
+
+### 1. Configurar Google Sheets
+1. Siga as instruções no arquivo `INSTRUCOES_GOOGLE_SHEETS.md`
+2. Configure o Google Apps Script
+3. Copie a URL do webhook gerada
+
+### 2. Configurar o Site
+1. Abra o arquivo `script.js`
+2. Configure as URLs:
+   ```javascript
+   const GOOGLE_SHEETS_CONFIG = {
+       sheetsId: '1yU1DiEvfHwjX4xVitAX7Auw5be5E12KKqxWmfsk10YU', // ✅ Já configurado
+       scriptUrl: 'SUA_URL_DO_GOOGLE_APPS_SCRIPT_AQUI', // Configure após criar o script
+   };
+   
+   const WEBHOOK_URL = 'https://seu-webhook-aqui.com/endpoint'; // Configure seu webhook
    ```
 
-3. **Inicie o servidor**:
-   ```bash
-   npm start
-   ```
-
-   Ou para desenvolvimento com auto-reload:
-   ```bash
-   npm run dev
-   ```
-
-4. **Acesse o sistema**:
-   - Abra seu navegador em: `http://localhost:8081`
-   - Ou acesse pelo IP do servidor: `http://SEU_IP:8081`
+### 3. Usar o Sistema
+1. Abra o arquivo `index.html` em um navegador
+2. Os usuários podem se cadastrar normalmente
+3. Os dados serão salvos automaticamente no Google Sheets
+4. Use o botão "Ver Dashboard" para visualizar os dados
 
 ## 📁 Estrutura do Projeto
 
-```
-rtx_cadastro_web/
-├── server.js              # Servidor Node.js
-├── package.json           # Dependências e scripts
-├── index.html             # Interface principal
-├── script.js              # Lógica do frontend
-├── styles.css             # Estilos CSS
-├── chart-background.js    # Gráficos de fundo
-├── data/                  # Pasta de dados (criada automaticamente)
-│   └── cadastros.json     # Arquivo de dados dos cadastros
-└── README.md              # Este arquivo
-```
+- `index.html` - Página principal com formulário e dashboard
+- `script.js` - Lógica JavaScript para Google Sheets e dashboard
+- `styles.css` - Estilos da página e dashboard
+- `chart-background.js` - Efeito de fundo animado
+- `google-apps-script.js` - Código para Google Apps Script
+- `INSTRUCOES_GOOGLE_SHEETS.md` - Instruções detalhadas de configuração
 
-## 🔧 Configuração
+## 🎯 Dashboard
 
-### Porta do Servidor
-Por padrão, o servidor roda na porta 8081. Para alterar:
+O dashboard permite visualizar:
+- **Estatísticas em tempo real**
+- **Lista de todos os cadastros**
+- **Filtros por tipo de usuário**
+- **Atualização automática**
 
-```bash
-PORT=8080 npm start
-```
+## 📋 Requisitos
 
-### Credenciais Administrativas
-Para acessar a área administrativa:
-- **Usuário**: `admin`
-- **Senha**: `rtx2024`
-
-⚠️ **IMPORTANTE**: Altere essas credenciais em produção!
-
-## 📊 API Endpoints
-
-### Cadastro
-- `POST /api/cadastrar` - Cadastrar novo usuário
-- `GET /api/cadastros` - Listar todos os cadastros
-- `GET /api/estatisticas` - Obter estatísticas
-
-### Exportação
-- `GET /api/exportar/excel` - Exportar dados em Excel
-- `GET /api/exportar/csv` - Exportar dados em CSV
-
-### Status
-- `GET /api/status` - Verificar status do servidor
-
-## 🚀 Deploy em Produção
-
-### Opção 1: Servidor VPS/Dedicado
-1. Faça upload dos arquivos para o servidor
-2. Instale o Node.js no servidor
-3. Execute `npm install`
-4. Execute `npm start`
-5. Configure um proxy reverso (nginx) se necessário
-
-### Opção 2: Heroku
-1. Crie um arquivo `Procfile`:
-   ```
-   web: node server.js
-   ```
-2. Faça deploy no Heroku
-3. O Heroku automaticamente detectará o `package.json`
-
-### Opção 3: Vercel/Netlify
-1. Configure o build command: `npm install`
-2. Configure o start command: `npm start`
-3. Faça deploy
+- Navegador web moderno
+- Conta Google (para Google Sheets)
+- Conexão com internet
 
 ## 🔒 Segurança
 
-- As senhas dos usuários são armazenadas no servidor (considere criptografar)
-- Validação de email e CPF únicos
-- CORS configurado para permitir requisições
-- Validação de dados no frontend e backend
+- ✅ Dados salvos no Google Sheets (nuvem segura)
+- ✅ Acesso controlado por você
+- ✅ Backup automático do Google
+- ✅ Histórico de alterações
 
-## 📱 Responsividade
+## 🆘 Suporte
 
-O sistema é totalmente responsivo e funciona em:
-- Desktop
-- Tablet
-- Smartphone
-- Modo escuro forçado
-
-## 🎨 Personalização
-
-### Cores e Tema
-Edite o arquivo `styles.css` para personalizar:
-- Cores principais
-- Gradientes
-- Animações
-- Layout
-
-### Logo
-Substitua o arquivo `logo_rtx.png` pela sua logo.
-
-## 🐛 Solução de Problemas
-
-### Erro de Porta em Uso
-```bash
-# Encontre o processo usando a porta 8081
-lsof -ti:8081
-
-# Mate o processo
-kill -9 PID_DO_PROCESSO
-```
-
-### Erro de Permissão
-```bash
-# Dê permissão de execução
-chmod +x server.js
-```
-
-### Dados não Carregam
-1. Verifique se o servidor está rodando
-2. Verifique se a pasta `data/` existe
-3. Verifique as permissões de escrita
-
-## 📞 Suporte
-
-Para suporte ou dúvidas:
-- Verifique os logs do servidor no console
-- Verifique o console do navegador (F12)
-- Verifique se todas as dependências estão instaladas
-
-## 🔄 Atualizações
-
-Para atualizar o sistema:
-1. Pare o servidor (Ctrl+C)
-2. Faça backup da pasta `data/`
-3. Substitua os arquivos
-4. Execute `npm install` (se houver novas dependências)
-5. Inicie o servidor novamente
-
----
-
-**RTX Operações** - Sistema de Cadastro Web v1.0
+Para problemas ou dúvidas, consulte o arquivo `INSTRUCOES_GOOGLE_SHEETS.md` com instruções detalhadas.
