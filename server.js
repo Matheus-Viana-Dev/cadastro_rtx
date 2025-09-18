@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8081;
 
 // Middleware
 app.use(cors());
@@ -414,4 +414,5 @@ app.listen(PORT, () => {
     console.log(`🚀 Servidor RTX Operações rodando na porta ${PORT}`);
     console.log(`📊 Acesse: http://localhost:${PORT}`);
     console.log(`📁 Dados salvos em: ${DATA_FILE}`);
+    console.log(`🌐 Para acessar externamente: http://SEU_IP:${PORT}`);
 });

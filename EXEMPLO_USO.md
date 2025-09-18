@@ -22,8 +22,8 @@ npm start
 
 ## 🌐 Acessando o Sistema
 
-1. **Abra seu navegador** e acesse: `http://localhost:3000`
-2. **Para acessar de outros dispositivos** na mesma rede: `http://SEU_IP:3000`
+1. **Abra seu navegador** e acesse: `http://localhost:8081`
+2. **Para acessar de outros dispositivos** na mesma rede: `http://SEU_IP:8081`
 
 ## 👤 Cadastro de Usuários
 
@@ -128,7 +128,7 @@ server {
     server_name seu-dominio.com;
     
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:8081;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -141,7 +141,7 @@ server {
 ## 🔍 Monitoramento
 
 ### Verificar Status
-Acesse: `http://localhost:3000/api/status`
+Acesse: `http://localhost:8081/api/status`
 
 ### Logs do Servidor
 Os logs aparecem no terminal onde o servidor está rodando
@@ -154,7 +154,7 @@ Os dados são salvos em: `data/cadastros.json`
 ### Erro "Porta em uso"
 ```bash
 # Encontrar processo
-lsof -ti:3000
+lsof -ti:8081
 
 # Parar processo
 kill -9 PID_DO_PROCESSO

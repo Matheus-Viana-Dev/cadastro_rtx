@@ -36,8 +36,8 @@ Sistema completo de cadastro web com backend Node.js para armazenamento de dados
    ```
 
 4. **Acesse o sistema**:
-   - Abra seu navegador em: `http://localhost:3000`
-   - Ou acesse pelo IP do servidor: `http://SEU_IP:3000`
+   - Abra seu navegador em: `http://localhost:8081`
+   - Ou acesse pelo IP do servidor: `http://SEU_IP:8081`
 
 ## 📁 Estrutura do Projeto
 
@@ -57,7 +57,7 @@ rtx_cadastro_web/
 ## 🔧 Configuração
 
 ### Porta do Servidor
-Por padrão, o servidor roda na porta 3000. Para alterar:
+Por padrão, o servidor roda na porta 8081. Para alterar:
 
 ```bash
 PORT=8080 npm start
@@ -137,8 +137,8 @@ Substitua o arquivo `logo_rtx.png` pela sua logo.
 
 ### Erro de Porta em Uso
 ```bash
-# Encontre o processo usando a porta 3000
-lsof -ti:3000
+# Encontre o processo usando a porta 8081
+lsof -ti:8081
 
 # Mate o processo
 kill -9 PID_DO_PROCESSO

@@ -47,8 +47,8 @@ fi
 
 echo ""
 echo "🎯 Configuração:"
-echo "   - Porta: 3000 (ou PORT definida no ambiente)"
-echo "   - Acesso: http://localhost:3000"
+echo "   - Porta: 8081 (ou PORT definida no ambiente)"
+echo "   - Acesso: http://localhost:8081"
 echo "   - Admin: admin / rtx2024"
 echo ""
 
