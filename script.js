@@ -18,18 +18,8 @@ let horariosChart = null;
 // Dados do formulário
 let formData = {};
 
-// Configuração do Google Sheets
-const GOOGLE_SHEETS_CONFIG = {
-    // URL da sua planilha específica
-    sheetsId: '1yU1DiEvfHwjX4xVitAX7Auw5be5E12KKqxWmfsk10YU',
-    // URL do Google Apps Script (será configurada após criar o script)
-    scriptUrl: 'https://script.google.com/macros/s/SEU_SCRIPT_ID/exec',
-    // URL pública da planilha
-    sheetsUrl: 'https://docs.google.com/spreadsheets/d/1yU1DiEvfHwjX4xVitAX7Auw5be5E12KKqxWmfsk10YU/edit'
-};
-
-// URL do webhook - ALTERE ESTA URL PARA SEU WEBHOOK
-const WEBHOOK_URL = 'https://seu-webhook-aqui.com/endpoint';
+// URL do webhook - ATUALIZADA PARA SUA URL
+const WEBHOOK_URL = 'https://nodesapi.tecskill.com.br/webhook/b6b01855-86d6-4d1f-9399-03f40dab6f9f';
 
 // Forçar modo escuro em todos os dispositivos
 function forcarModoEscuro() {
@@ -324,71 +314,49 @@ document.querySelectorAll('.type-btn').forEach(btn => {
     });
 });
 
-// Função para enviar dados para o webhook
+// Função ATUALIZADA para enviar dados APENAS para o webhook
 async function enviarParaWebhook(dados) {
     try {
+        console.log('Enviando dados para webhook:', dados);
+        
         const response = await fetch(WEBHOOK_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(dados)
         });
         
+        console.log('Status da resposta:', response.status);
+        console.log('Response headers:', [...response.headers.entries()]);
+        
         if (response.ok) {
-            return { success: true, message: 'Dados enviados para webhook!' };
+            const responseData = await response.text();
+            console.log('Resposta do webhook:', responseData);
+            return { 
+                success: true, 
+                message: 'Dados enviados com sucesso para o webhook!',
+                data: responseData
+            };
         } else {
-            const errorData = await response.json().catch(() => ({ message: 'Erro no servidor' }));
-            return { success: false, message: errorData.message || 'Erro ao enviar dados para webhook' };
+            const errorText = await response.text();
+            console.error('Erro na resposta:', errorText);
+            return { 
+                success: false, 
+                message: `Erro ${response.status}: ${errorText || 'Erro no servidor'}` 
+            };
         }
     } catch (error) {
         console.error('Erro ao enviar para webhook:', error);
-        return { success: false, message: 'Erro de conexão com webhook. Verifique sua internet.' };
+        return { 
+            success: false, 
+            message: `Erro de conexão: ${error.message}. Verifique sua internet e tente novamente.` 
+        };
     }
 }
 
-// Função para enviar dados para o Google Sheets
-async function enviarParaGoogleSheets(dados) {
-    try {
-        // Converter dados para formato de linha da planilha
-        const linhaPlanilha = [
-            dados.nome,
-            dados.email,
-            dados.cpf,
-            dados.senha,
-            dados.tipoUsuario === 'cliente' ? 'Cliente' : 'GN',
-            dados.dataCadastro
-        ];
-        
-        // Enviar para Google Apps Script
-        const response = await fetch(GOOGLE_SHEETS_CONFIG.scriptUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'adicionarCadastro',
-                dados: linhaPlanilha
-            })
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            if (result.success) {
-                return { success: true, message: 'Dados salvos no Google Sheets!' };
-            } else {
-                return { success: false, message: result.message || 'Erro ao salvar dados' };
-            }
-        } else {
-            return { success: false, message: 'Erro no servidor do Google Sheets' };
-        }
-    } catch (error) {
-        console.error('Erro ao enviar para Google Sheets:', error);
-        return { success: false, message: 'Erro de conexão. Verifique sua internet.' };
-    }
-}
-
-// Event listener para o formulário de cadastro
+// Event listener ATUALIZADO para o formulário de cadastro
 cadastroForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -399,7 +367,10 @@ cadastroForm.addEventListener('submit', async function(e) {
         cpf: document.getElementById('cpf').value.trim(),
         senha: document.getElementById('senha').value.trim(),
         tipoUsuario: document.getElementById('user-type').value,
-        dataCadastro: new Date().toLocaleString('pt-BR')
+        dataCadastro: new Date().toISOString(),
+        timestamp: Date.now(),
+        userAgent: navigator.userAgent,
+        origem: 'formulario_rtx'
     };
     
     // Validar formulário
@@ -417,37 +388,36 @@ cadastroForm.addEventListener('submit', async function(e) {
     submitBtn.textContent = 'Enviando...';
     submitBtn.disabled = true;
     
-    // Enviar para ambos (Google Sheets e webhook)
-    const [sheetsResult, webhookResult] = await Promise.allSettled([
-        enviarParaGoogleSheets(formData),
-        enviarParaWebhook(formData)
-    ]);
-    
-    // Verificar resultados
-    const sheetsSuccess = sheetsResult.status === 'fulfilled' && sheetsResult.value.success;
-    const webhookSuccess = webhookResult.status === 'fulfilled' && webhookResult.value.success;
-    
-    let result;
-    if (sheetsSuccess && webhookSuccess) {
-        result = { success: true, message: 'Dados salvos no Google Sheets e enviados para webhook!' };
-    } else if (sheetsSuccess) {
-        result = { success: true, message: 'Dados salvos no Google Sheets! (Webhook falhou)' };
-    } else if (webhookSuccess) {
-        result = { success: true, message: 'Dados enviados para webhook! (Google Sheets falhou)' };
-    } else {
-        result = { success: false, message: 'Erro ao salvar dados em ambos os locais.' };
-    }
-    
-    if (result.success) {
-        // Mostrar tela de agradecimento
-        showScreen('agradecimento-screen');
-        showNotification('Cadastro realizado com sucesso!');
+    try {
+        const result = await enviarParaWebhook(formData);
         
-        // Limpar formulário
-        cadastroForm.reset();
-        formData = {};
-    } else {
-        showNotification(result.message, 'error');
+        if (result.success) {
+            // Mostrar tela de agradecimento
+            showScreen('agradecimento-screen');
+            showNotification('Cadastro realizado com sucesso!');
+            
+            // Limpar formulário
+            cadastroForm.reset();
+            
+            // Limpar seleção de tipo de usuário
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById('user-type').value = '';
+            
+            // Limpar indicador de senha
+            const indicator = document.getElementById('senha-indicator');
+            if (indicator) {
+                indicator.classList.remove('active');
+            }
+            
+            formData = {};
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erro inesperado:', error);
+        showNotification('Erro inesperado. Tente novamente.', 'error');
     }
     
     // Resetar botão
@@ -461,14 +431,30 @@ voltarBtn.addEventListener('click', function() {
     
     // Limpar formulário
     cadastroForm.reset();
+    
+    // Limpar seleção de tipo de usuário
+    document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById('user-type').value = '';
+    
+    // Limpar indicador de senha
+    const indicator = document.getElementById('senha-indicator');
+    if (indicator) {
+        indicator.classList.remove('active');
+    }
+    
     formData = {};
 });
 
 // Event listener para formatação do telefone
-document.getElementById('telefone').addEventListener('input', function(e) {
-    const formatted = formatPhoneNumber(e.target.value);
-    e.target.value = formatted;
-});
+const telefoneInput = document.getElementById('telefone');
+if (telefoneInput) {
+    telefoneInput.addEventListener('input', function(e) {
+        const formatted = formatPhoneNumber(e.target.value);
+        e.target.value = formatted;
+    });
+}
 
 // Event listener para animação de foco nos inputs
 document.querySelectorAll('input').forEach(input => {
@@ -481,327 +467,11 @@ document.querySelectorAll('input').forEach(input => {
     });
 });
 
-// Função para carregar dados do Google Sheets
-async function carregarDadosDashboard() {
-    try {
-        const response = await fetch(GOOGLE_SHEETS_CONFIG.scriptUrl + '?action=obterDados');
-        const result = await response.json();
-        
-        if (result.success) {
-            return result.dados;
-        } else {
-            console.error('Erro ao carregar dados:', result.message);
-            return [];
-        }
-    } catch (error) {
-        console.error('Erro de conexão:', error);
-        return [];
-    }
-}
-
-// Função para atualizar estatísticas do dashboard
-async function atualizarEstatisticas() {
-    const dados = await carregarDadosDashboard();
-    
-    const totalCadastros = dados.length;
-    const totalClientes = dados.filter(d => d[4] === 'Cliente').length;
-    const totalGN = dados.filter(d => d[4] === 'GN').length;
-    const cadastrosCompletos = dados.filter(d => d[0] && d[1] && d[2] && d[3]).length;
-    const cadastrosIncompletos = totalCadastros - cadastrosCompletos;
-    
-    // Simular acessos (para demonstração - você pode implementar rastreamento real)
-    const totalAcessos = Math.max(totalCadastros * 3, 50); // Estimativa
-    const taxaConversao = totalAcessos > 0 ? ((totalCadastros / totalAcessos) * 100).toFixed(1) : 0;
-    
-    document.getElementById('total-acessos').textContent = totalAcessos;
-    document.getElementById('total-cadastros').textContent = totalCadastros;
-    document.getElementById('cadastros-completos').textContent = cadastrosCompletos;
-    document.getElementById('cadastros-incompletos').textContent = cadastrosIncompletos;
-    document.getElementById('taxa-conversao').textContent = taxaConversao + '%';
-}
-
-// Função para atualizar tabela de cadastros
-async function atualizarTabela() {
-    const tbody = document.getElementById('cadastros-tbody');
-    
-    // Mostrar loading
-    tbody.innerHTML = '<tr><td colspan="5" class="loading"><i class="fas fa-spinner"></i> Carregando dados...</td></tr>';
-    
-    const dados = await carregarDadosDashboard();
-    
-    if (dados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #aaa;">Nenhum cadastro encontrado</td></tr>';
-        return;
-    }
-    
-    // Ordenar por data (mais recentes primeiro)
-    const dadosOrdenados = dados.sort((a, b) => new Date(b[5]) - new Date(a[5]));
-    
-    // Mostrar apenas os últimos 10 cadastros
-    const ultimosCadastros = dadosOrdenados.slice(0, 10);
-    
-    tbody.innerHTML = ultimosCadastros.map(cadastro => `
-        <tr>
-            <td>${cadastro[0]}</td>
-            <td>${cadastro[1]}</td>
-            <td>${cadastro[2]}</td>
-            <td>${cadastro[4]}</td>
-            <td>${cadastro[5]}</td>
-        </tr>
-    `).join('');
-}
-
-// Função para atualizar gráficos
-async function atualizarGraficos() {
-    const dados = await carregarDadosDashboard();
-    
-    // Atualizar gráfico de cadastros por dia
-    atualizarGraficoCadastros(dados);
-    
-    // Atualizar gráfico de horários
-    atualizarGraficoHorarios(dados);
-}
-
-// Função para atualizar gráfico de cadastros por dia
-function atualizarGraficoCadastros(dados) {
-    const ctx = document.getElementById('cadastros-chart');
-    if (!ctx) return;
-    
-    const cadastrosPorDia = getCadastrosPorDia(dados);
-    const labels = Object.keys(cadastrosPorDia);
-    const values = Object.values(cadastrosPorDia);
-    
-    if (cadastrosChart) {
-        cadastrosChart.destroy();
-    }
-    
-    cadastrosChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Cadastros',
-                data: values,
-                backgroundColor: 'rgba(0, 212, 255, 0.8)',
-                borderColor: '#00d4ff',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#ffffff'
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        color: '#ffffff'
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    }
-                },
-                x: {
-                    ticks: {
-                        color: '#ffffff'
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Função para atualizar gráfico de horários
-function atualizarGraficoHorarios(dados) {
-    const ctx = document.getElementById('horarios-chart');
-    if (!ctx) return;
-    
-    const distribuicaoHorarios = getDistribuicaoHorarios(dados);
-    const labels = Object.keys(distribuicaoHorarios);
-    const values = Object.values(distribuicaoHorarios);
-    
-    if (horariosChart) {
-        horariosChart.destroy();
-    }
-    
-    horariosChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: values,
-                backgroundColor: [
-                    '#00d4ff',
-                    '#0099cc',
-                    '#006699',
-                    '#003d5c',
-                    '#001a2e'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#ffffff'
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Função para obter cadastros por dia
-function getCadastrosPorDia(dados) {
-    const cadastrosPorDia = {};
-    
-    dados.forEach(cadastro => {
-        const data = new Date(cadastro[5]);
-        const dataFormatada = data.toLocaleDateString('pt-BR');
-        
-        if (cadastrosPorDia[dataFormatada]) {
-            cadastrosPorDia[dataFormatada]++;
-        } else {
-            cadastrosPorDia[dataFormatada] = 1;
-        }
-    });
-    
-    return cadastrosPorDia;
-}
-
-// Função para obter distribuição por horário
-function getDistribuicaoHorarios(dados) {
-    const distribuicao = {
-        'Manhã (06-12h)': 0,
-        'Tarde (12-18h)': 0,
-        'Noite (18-24h)': 0,
-        'Madrugada (00-06h)': 0
-    };
-    
-    dados.forEach(cadastro => {
-        const data = new Date(cadastro[5]);
-        const hora = data.getHours();
-        
-        if (hora >= 6 && hora < 12) {
-            distribuicao['Manhã (06-12h)']++;
-        } else if (hora >= 12 && hora < 18) {
-            distribuicao['Tarde (12-18h)']++;
-        } else if (hora >= 18 && hora < 24) {
-            distribuicao['Noite (18-24h)']++;
-        } else {
-            distribuicao['Madrugada (00-06h)']++;
-        }
-    });
-    
-    return distribuicao;
-}
-
-// Função para exportar para Excel
-async function exportarParaExcel() {
-    try {
-        const dados = await carregarDadosDashboard();
-        
-        if (dados.length === 0) {
-            showNotification('Nenhum dado para exportar!', 'error');
-            return;
-        }
-        
-        // Preparar dados para Excel
-        const dadosExcel = [
-            ['Nome', 'Email', 'CPF', 'Senha', 'Tipo', 'Data Cadastro'],
-            ...dados
-        ];
-        
-        // Criar workbook
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet(dadosExcel);
-        XLSX.utils.book_append_sheet(wb, ws, 'Cadastros');
-        
-        // Salvar arquivo
-        XLSX.writeFile(wb, `cadastros_rtx_${new Date().toISOString().split('T')[0]}.xlsx`);
-        
-        showNotification('Arquivo Excel exportado com sucesso!');
-    } catch (error) {
-        console.error('Erro ao exportar Excel:', error);
-        showNotification('Erro ao exportar Excel!', 'error');
-    }
-}
-
-// Função para exportar para CSV
-async function exportarParaCSV() {
-    try {
-        const dados = await carregarDadosDashboard();
-        
-        if (dados.length === 0) {
-            showNotification('Nenhum dado para exportar!', 'error');
-            return;
-        }
-        
-        // Preparar dados para CSV
-        const header = 'Nome,Email,CPF,Senha,Tipo,Data Cadastro\n';
-        const csvData = dados.map(linha => linha.join(',')).join('\n');
-        const csvContent = header + csvData;
-        
-        // Criar e baixar arquivo
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `cadastros_rtx_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showNotification('Arquivo CSV exportado com sucesso!');
-    } catch (error) {
-        console.error('Erro ao exportar CSV:', error);
-        showNotification('Erro ao exportar CSV!', 'error');
-    }
-}
-
-// Função para limpar dados (apenas local - não afeta Google Sheets)
-async function limparDados() {
-    if (!confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
-        return;
-    }
-    
-    try {
-        // Nota: Como estamos usando Google Sheets, não podemos limpar os dados remotamente
-        // Esta função serve apenas para limpar dados locais se houver
-        showNotification('Dados limpos localmente! (Google Sheets não afetado)', 'info');
-        
-        // Atualizar dashboard
-        await atualizarDashboard();
-    } catch (error) {
-        console.error('Erro ao limpar dados:', error);
-        showNotification('Erro ao limpar dados!', 'error');
-    }
-}
-
-// Função para atualizar dashboard completo
-async function atualizarDashboard() {
-    await Promise.all([
-        atualizarEstatisticas(),
-        atualizarTabela(),
-        atualizarGraficos()
-    ]);
-}
-
-// Event listeners para navegação do dashboard
+// Event listeners para navegação do dashboard (removido funcionalidades do Google Sheets)
 if (dashboardBtn) {
     dashboardBtn.addEventListener('click', function() {
         showScreen('dashboard-screen');
-        atualizarDashboard();
+        showNotification('Dashboard simplificado - apenas para navegação');
     });
 }
 
@@ -811,25 +481,6 @@ if (voltarDashboardBtn) {
     });
 }
 
-if (refreshBtn) {
-    refreshBtn.addEventListener('click', function() {
-        atualizarDashboard();
-        showNotification('Dados atualizados!');
-    });
-}
-
-if (exportExcelBtn) {
-    exportExcelBtn.addEventListener('click', exportarParaExcel);
-}
-
-if (exportCsvBtn) {
-    exportCsvBtn.addEventListener('click', exportarParaCSV);
-}
-
-if (limparDadosBtn) {
-    limparDadosBtn.addEventListener('click', limparDados);
-}
-
 // Inicialização
 document.addEventListener('DOMContentLoaded', function() {
     // Garantir que a tela de cadastro esteja ativa inicialmente
@@ -837,6 +488,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Adicionar efeito de partículas no fundo (opcional)
     createParticleEffect();
+    
+    console.log('Sistema iniciado - Webhook URL:', WEBHOOK_URL);
 });
 
 // Função para criar efeito de partículas no fundo
